@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartCatch – Stardew Valley Mod</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 2rem; max-width: 960px; margin: 0 auto; line-height: 1.5; }
+    h1 { margin-top: 0; }
+    .hero { margin-bottom: 2rem; }
+    .hero p { color: #444; font-size: 1.1rem; }
+    .chart-section { margin: 2rem 0; }
+    .chart-section h2 { margin-bottom: 1rem; }
+    iframe { width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px; }
+    .fallback { display: block; margin-top: 1rem; font-size: 1rem; }
+    .fallback a { color: #0969da; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>SmartCatch</h1>
+    <p>A Stardew Valley SMAPI mod that skips the fishing minigame and simulates outcomes based on fish difficulty, fishing level, rod, bait, tackle, and other factors.</p>
+    <p><a href="https://github.com/EtayP12/SmartCatch">View on GitHub</a></p>
+  </div>
+
+  <section class="chart-section">
+    <h2>Probability Curves</h2>
+    <p>Adjust fishing level and rod options to see how success, perfect, and treasure chances change with fish difficulty.</p>
+    <iframe src="probability-chart.html" title="SmartCatch Probability Chart"></iframe>
+    <a class="fallback" href="probability-chart.html">Open chart in new tab</a>
+  </section>
+</body>
+</html>

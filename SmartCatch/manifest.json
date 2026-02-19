@@ -1,0 +1,9 @@
+{
+  "Name": "SmartCatch",
+  "Author": "SmartCatch",
+  "Version": "1.0.0",
+  "Description": "Skips the fishing minigame while simulating outcomes based on fish difficulty, fishing level, rod, bait, tackle, and other factors.",
+  "UniqueID": "SmartCatch.SmartCatch",
+  "EntryDll": "SmartCatch.dll",
+  "UpdateKeys": []
+}

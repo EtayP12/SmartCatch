@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartCatch Probability Curves</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; }
+    h1 { margin-bottom: 0.5rem; }
+    .back { margin-bottom: 1rem; font-size: 0.9rem; }
+    .back a { color: #0969da; }
+    .controls { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 8px; }
+    .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .control-group label { font-weight: 500; font-size: 0.9rem; }
+    .control-group select { padding: 0.4rem 0.6rem; font-size: 1rem; }
+    .checkboxes { display: flex; flex-direction: column; gap: 0.4rem; }
+    .checkboxes label { font-weight: normal; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .checkboxes input { width: 1rem; height: 1rem; }
+    .bar-size { font-size: 0.9rem; color: #666; margin-top: 0.5rem; }
+    .chart-container { position: relative; height: 350px; margin-bottom: 2rem; }
+    .note { font-size: 0.9rem; color: #666; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="back"><a href="index.html">← SmartCatch</a></div>
+  <h1>SmartCatch Probability Curves</h1>
+  <div class="controls">
+    <div class="control-group">
+      <label for="fishingLevel">Fishing Level</label>
+      <select id="fishingLevel">
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10" selected>10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Rod Options</label>
+      <div class="checkboxes">
+        <label><input type="checkbox" id="trainingRod"> Training Rod (effective level 5 when below 5)</label>
+        <label><input type="checkbox" id="corkBobber"> Cork Bobber (+24px)</label>
+        <label><input type="checkbox" id="corkBobber2"> Second Cork Bobber (+24px, Advanced Iridium)</label>
+        <label><input type="checkbox" id="deluxeBait"> Deluxe Bait (+12px)</label>
+        <label><input type="checkbox" id="masterEnchant"> Master Enchant (+8px)</label>
+      </div>
+      <span class="bar-size" id="barSizeDisplay">Bar size: 176 px</span>
+    </div>
+  </div>
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+  <p class="note">Success uses squared cap. Perfect uses squared cap (99%→22%). Treasure uses squared cap.</p>
+
+  <script>
+    const difficulties = [];
+    for (let d = 15; d <= 100; d++) difficulties.push(d);
+
+    const minDiff = 15, maxDiff = 100;
+
+    function getBarSize() {
+      let level = parseInt(document.getElementById('fishingLevel').value) || 0;
+      const trainingRod = document.getElementById('trainingRod').checked;
+      const corkBobber = document.getElementById('corkBobber').checked;
+      const corkBobber2 = document.getElementById('corkBobber2').checked;
+      const deluxeBait = document.getElementById('deluxeBait').checked;
+      const masterEnchant = document.getElementById('masterEnchant').checked;
+
+      if (trainingRod && level < 5) level = 5;
+      let barSize = 96 + (level * 8);
+      if (corkBobber) barSize += 24;
+      if (corkBobber2) barSize += 24;
+      if (deluxeBait) barSize += 12;
+      if (masterEnchant) barSize += 8;
+
+      return barSize;
+    }
+
+    function logFactor(d) {
+      if (d <= minDiff) return 0;
+      const t = (d - minDiff) / (maxDiff - minDiff);
+      return t * t;
+    }
+
+    function maxSuccess(d) {
+      if (d <= minDiff) return 0.99;
+      return 0.99 - logFactor(d) * 0.16;
+    }
+
+    function maxPerfect(d) {
+      if (d <= minDiff) return 0.99;
+      const t = (d - minDiff) / (maxDiff - minDiff);
+      return 0.99 - t * t * 0.77;
+    }
+
+    function maxTreasure(d) {
+      if (d <= minDiff) return 0.95;
+      return 0.95 - logFactor(d) * 0.22;
+    }
+
+    function computeProbs(barSize) {
+      return {
+        success: difficulties.map(d => {
+          const raw = barSize / (d * 2.5);
+          return Math.min(maxSuccess(d), Math.min(1, raw)) * 100;
+        }),
+        perfect: difficulties.map(d => {
+          const cap = maxPerfect(d);
+          let barFactor;
+          if (barSize >= 176) barFactor = 1;
+          else {
+            const t = (d - 15) / 85;
+            const power = 2.0 + 1.1 * t + 2.0 * t * t;
+            barFactor = Math.pow(barSize / 176, power);
+          }
+          return barFactor * cap * 100;
+        }),
+        treasure: difficulties.map(d => {
+          const raw = barSize / (d * 3.0);
+          return Math.min(maxTreasure(d), Math.min(1, raw)) * 100;
+        })
+      };
+    }
+
+    const chart = new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: {
+        labels: difficulties,
+        datasets: [
+          { label: 'Success', data: [], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.2 },
+          { label: 'Perfect', data: [], borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', fill: true, tension: 0.2 },
+          { label: 'Treasure', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.2 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { title: { display: true, text: 'Fish Difficulty' }, min: 15, max: 100 },
+          y: { title: { display: true, text: 'Probability (%)' }, min: 0, max: 100 }
+        }
+      }
+    });
+
+    function updateChart() {
+      const barSize = getBarSize();
+      document.getElementById('barSizeDisplay').textContent = `Bar size: ${barSize} px`;
+      const probs = computeProbs(barSize);
+      chart.data.datasets[0].data = probs.success;
+      chart.data.datasets[1].data = probs.perfect;
+      chart.data.datasets[2].data = probs.treasure;
+      chart.update();
+    }
+
+    document.getElementById('fishingLevel').addEventListener('change', updateChart);
+    document.getElementById('trainingRod').addEventListener('change', updateChart);
+    document.getElementById('corkBobber').addEventListener('change', updateChart);
+    document.getElementById('corkBobber2').addEventListener('change', updateChart);
+    document.getElementById('deluxeBait').addEventListener('change', updateChart);
+    document.getElementById('masterEnchant').addEventListener('change', updateChart);
+
+    updateChart();
+  </script>
+</body>
+</html>
